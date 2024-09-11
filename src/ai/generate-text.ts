@@ -12,6 +12,7 @@ fal.config({
 
 export async function generateText(prompt: string) {
   "use server"
+
   const result = await genText({
     model: google("gemini-1.5-flash"),
     prompt,
@@ -21,25 +22,26 @@ export async function generateText(prompt: string) {
         description: "generate a wallpaper",
         parameters: z.object({
           description: z.string(),
-          params: z.array(z.string()),
+          params: z.array(z.object({ name: z.string(), value: z.string() })),
         }),
         execute: async ({ description, params }) => {
           const result = await fal.subscribe("fal-ai/lora", {
             input: {
               model_name: "stabilityai/stable-diffusion-xl-base-1.0",
-              prompt: "Photo of a european medieval 40 year old queen, silver hair, highly detailed face, detailed eyes, head shot, intricate crown, age spots, wrinkles"
+              prompt: `generate a wallpaper based on following params: ${params.map((p) => `${p.name}- ${p.value}`).join(", ")}. ${description}`,
             },
-            logs: true,
             onQueueUpdate: (update) => {
               // if (update.status === "IN_PROGRESS") {
               //   update.logs.map((log) => log.message).forEach(console.log);
               // }
             },
           });
-          console.log(result)
-          if (!result) return result
+          if (!result) return undefined
           if (typeof result === "object" && "images" in result && result.images instanceof Array && result.images.length > 0 && "url" in result.images[0]) {
-            return result.images[0].url
+            return {
+              type: "image",
+              value: result.images[0].url,
+            }
           }
           return undefined
         },
@@ -47,6 +49,14 @@ export async function generateText(prompt: string) {
     },
     // toolChoice: { type: "tool", toolName: "toolName" },
   })
-  console.log(result)
-  return result
+  if (result.toolResults[0]?.toolName === "wallpaper") {
+    return {
+      type: "image",
+      value: result.toolResults[0]?.result?.value?.toString() ?? "",
+    }
+  }
+  return {
+    type: "text",
+    value: result.text,
+  }
 }

@@ -29,24 +29,28 @@ import Image from "next/image"
 
 export function ImageGeneratorPage() {
   const [customElements, setCustomElements] = useState([
-    { name: "neon" },
+    { name: "weather" },
   ])
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [component, setComponent] = useState<React.ReactNode>(null)
 
   const generateUrlMutation = useMutation({
     mutationFn: () => {
-      return generateText("generate a wallpaper for winters")
+      return generateText(`generate a wallpaper based on following parameters: ${customElements.join(", ")}`)
     },
     onError: (error) => {
       console.log(error)
     },
     onSuccess: (text) => {
-      let child = <div>{text.text}</div>
-      if (!text.text) {
-        if (text.toolResults[0]?.toolName === "wallpaper") {
-          child = <Image src={text.toolResults[0]?.result as string ?? ""} height={240} width={240} alt="wallpaper" />
-        }
+      let child = <div>{JSON.stringify(text)}</div>
+      switch (text.type) {
+        case "text":
+          child = <div>{text.value}</div>
+          break;
+        case "image":
+          console.log(text.value)
+          child = <Image src={text.value} height={1024} width={1024} alt="wallpaper" className="w-full h-full" />
+          break;
       }
 
       setComponent(child)
@@ -65,7 +69,7 @@ export function ImageGeneratorPage() {
     setCustomElements(newElements)
   }
   const handleAddCustomElement = () => {
-    setCustomElements([...customElements, { name: `Element ${customElements.length + 1}` }])
+    setCustomElements([...customElements, { name: '' }])
   }
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
