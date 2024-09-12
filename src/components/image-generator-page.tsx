@@ -43,7 +43,7 @@ function useGenerateMutation({ onComplete }: { onComplete: (child: ReactNode) =>
           child = <div>{text.value}</div>
           break;
         case "image":
-          child = <Image src={text.value} height={1024} width={1024} alt="wallpaper" className="w-full h-full" />
+          child = <Image src={text.value} height={1024} width={1024} alt="wallpaper" className="w-full h-full object-cover" />
           break;
       }
 
@@ -81,8 +81,8 @@ export function ImageGeneratorPage() {
     setIsFullscreen(!isFullscreen)
   }
   return (
-    <div className={`flex h-screen ${isFullscreen ? "fixed inset-0 z-50 bg-background" : ""}`}>
-      <div className={`flex-1 bg-background ${isFullscreen ? "h-full" : ""}`}>
+    <div className={`flex flex-col lg:flex-row h-screen ${isFullscreen ? "fixed inset-0 z-50 bg-background" : ""}`}>
+      <div className={`flex-1 bg-background ${isFullscreen ? "h-full" : "h-1/2 lg:h-full"}`}>
         <div className={cn("relative h-full", isFullscreen && "overflow-hidden", generateUrlMutation.isPending && !!component && "animate-pulse")}>
           {
             component ||
@@ -107,47 +107,42 @@ export function ImageGeneratorPage() {
           </div>
         </div>
       </div>
-      <div className={`w-80 bg-muted p-6 flex flex-col h-screen gap-6 ${isFullscreen ? "hidden" : ""}`}>
+      <div className={`w-full lg:w-80 bg-muted p-4 lg:p-6 flex flex-col h-1/2 lg:h-screen gap-4 lg:gap-6 ${isFullscreen ? "hidden" : ""}`}>
         <div>
           <h2 className="text-xl font-bold">Paper AI</h2>
-          <div className="mt-2" />
         </div>
-        <div>
-          <div>
-            <h2 className="text-xl font-bold">Parameters</h2>
-            <div className="mt-2 flex flex-col gap-2">
-              <ScrollArea className="h-[75vh]">
-                <div className="grid grid-cols-1 gap-2">
-                  {customElements.map((element, index) => (
-                    <div key={index} className="flex items-center justify-between bg-background p-2 rounded-md">
-                      <Input
-                        name={`param-${index}`}
-                        value={element.name}
-                        onChange={(e) => handleCustomElementsChange(index, e.target.value)}
-                        className="flex-1 mr-2"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleCustomElementRemove(index)}
-                        className="opacity-100"
-                      >
-                        <XIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between bg-background p-2 rounded-md">
-                    <Input value="Add" disabled className="flex-1 mr-2" />
-                    <Button variant="ghost" size="icon" onClick={handleAddCustomElement}>
-                      <PlusIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
+        <div className="flex-1 overflow-hidden">
+          <h2 className="text-xl font-bold mb-2">Parameters</h2>
+          <ScrollArea className="h-[calc(100%-2rem)]">
+            <div className="grid grid-cols-1 gap-2">
+              {customElements.map((element, index) => (
+                <div key={index} className="flex items-center justify-between bg-background p-2 rounded-md">
+                  <Input
+                    name={`param-${index}`}
+                    value={element.name}
+                    onChange={(e) => handleCustomElementsChange(index, e.target.value)}
+                    className="flex-1 mr-2"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleCustomElementRemove(index)}
+                    className="opacity-100"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
                 </div>
-              </ScrollArea>
+              ))}
+              <div className="flex items-center justify-between bg-background p-2 rounded-md">
+                <Input value="Add" disabled className="flex-1 mr-2" />
+                <Button variant="ghost" size="icon" onClick={handleAddCustomElement}>
+                  <PlusIcon className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         </div>
-        <div className="flex gap-2 mt-auto">
+        <div className="flex gap-2">
           <Button className="flex-1 flex items-center gap-2" disabled={customElements.length > 0 && generateUrlMutation.isPending} onClick={() => generateUrlMutation.mutate(`generate a wallpaper based on following parameters : ${customElements.map(c => c.name).join(", ")}`)}>
             <DownloadIcon className="w-4 h-4" />
             Generate Wallpaper
@@ -179,7 +174,6 @@ function DownloadIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-
 function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -199,7 +193,6 @@ function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
-
 
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
