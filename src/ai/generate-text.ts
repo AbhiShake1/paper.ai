@@ -40,6 +40,7 @@ export async function generateText(prompt: string) {
           params: z.array(z.object({ factor: z.string(), scrapedValue: z.string().describe("the value received from retreive tool") })),
         }),
         execute: async ({ description, params }) => {
+          console.log("generating image...", description, params)
           const result = await fal.subscribe("fal-ai/lora", {
             input: {
               model_name: "stabilityai/stable-diffusion-xl-base-1.0",

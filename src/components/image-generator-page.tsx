@@ -31,7 +31,10 @@ import { SizeIcon } from "@radix-ui/react-icons"
 
 function useGenerateMutation({ onComplete }: { onComplete: (child: ReactNode) => void }) {
   return useMutation({
-    mutationFn: generateText,
+    mutationFn: async (t: string) => {
+      const ipInfo = await fetch("http://ip-api.com/json/").then(r => r.json())
+      return generateText(`${t}. this is the current information, use it for location and so on: ${JSON.stringify(ipInfo)}`)
+    },
     onError: console.error,
     onSuccess: (text) => {
       let child = <div>{JSON.stringify(text)}</div>
