@@ -9,6 +9,7 @@ export const env = createEnv({
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
     FAL_API_KEY: z.string(),
+    GITHUB_TOKEN: z.string(),
   },
 
   /**
@@ -27,6 +28,7 @@ export const env = createEnv({
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
     FAL_API_KEY: process.env.FAL_API_KEY,
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

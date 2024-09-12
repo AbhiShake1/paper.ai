@@ -26,10 +26,12 @@ import { Input } from "@/components/ui/input"
 import { useMutation } from "@tanstack/react-query"
 import { generateText } from "@/ai/generate-text"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
+import { SizeIcon } from "@radix-ui/react-icons"
 
-function useGenerateMutation({ onComplete, prompt }: { prompt: string, onComplete: (child: ReactNode) => void }) {
+function useGenerateMutation({ onComplete }: { onComplete: (child: ReactNode) => void }) {
   return useMutation({
-    mutationFn: () => generateText(prompt),
+    mutationFn: generateText,
     onError: console.error,
     onSuccess: (text) => {
       let child = <div>{JSON.stringify(text)}</div>
@@ -56,7 +58,6 @@ export function ImageGeneratorPage() {
   const [component, setComponent] = useState<React.ReactNode>(null)
 
   const generateUrlMutation = useGenerateMutation({
-    prompt: `generate a wallpaper based on following parameters : ${customElements.map(c => c.name).join(", ")}`,
     onComplete: (child) => setComponent(child),
   })
 
@@ -80,13 +81,13 @@ export function ImageGeneratorPage() {
   return (
     <div className={`flex h-screen ${isFullscreen ? "fixed inset-0 z-50 bg-background" : ""}`}>
       <div className={`flex-1 bg-background ${isFullscreen ? "h-full" : ""}`}>
-        <div className="relative h-full">
+        <div className={cn("relative h-full", isFullscreen && "overflow-hidden", generateUrlMutation.isPending && !!component && "animate-pulse")}>
           {
             component ||
             <img
               src="/placeholder.svg"
               alt="Wallpaper Preview"
-              className="absolute inset-0 w-full h-full object-cover"
+              className={cn("absolute inset-0 w-full h-full object-cover", generateUrlMutation.isPending && "animate-spin")}
             />
           }
           <div
@@ -96,9 +97,9 @@ export function ImageGeneratorPage() {
             <Button
               variant={isFullscreen ? "outline" : "default"}
               onClick={toggleFullscreen}
-              className="flex items-center gap-2"
+              className={cn("flex items-center gap-2", isFullscreen && "opacity-0 hover:opacity-100")}
             >
-              <div className="w-4 h-4" />
+              <SizeIcon className="w-4 h-4" />
               {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             </Button>
           </div>
@@ -145,7 +146,7 @@ export function ImageGeneratorPage() {
           </div>
         </div>
         <div className="flex gap-2 mt-auto">
-          <Button className="flex-1 flex items-center gap-2" disabled={customElements.length > 0 && generateUrlMutation.isPending} onClick={() => generateUrlMutation.mutate()}>
+          <Button className="flex-1 flex items-center gap-2" disabled={customElements.length > 0 && generateUrlMutation.isPending} onClick={() => generateUrlMutation.mutate(`generate a wallpaper based on following parameters : ${customElements.map(c => c.name).join(", ")}`)}>
             <DownloadIcon className="w-4 h-4" />
             Generate Wallpaper
           </Button>

@@ -1,6 +1,7 @@
 "use server"
 
-import { google } from "@ai-sdk/google"
+// import { createOpenAI as createAI } from "@ai-sdk/openai"
+import { createGoogleGenerativeAI as createAI } from "@ai-sdk/google"
 import { generateText as genText } from "ai"
 import { z } from "zod"
 import * as fal from "@fal-ai/serverless-client";
@@ -10,11 +11,14 @@ fal.config({
   credentials: env.FAL_API_KEY,
 });
 
-export async function generateText(prompt: string) {
-  "use server"
+const model = createAI({
+  // baseURL: "https://models.inference.ai.azure.com",
+  // apiKey: env.GITHUB_TOKEN,
+})
 
+export async function generateText(prompt: string) {
   const result = await genText({
-    model: google("gemini-1.5-flash"),
+    model: model("gemini-1.5-flash"),
     system: `As a professional search expert and artist, you possess the ability to search for any information on the web, and based on that generate unique art.
     or any information on the web.
     For each user query, utilize the search results and creativity to their fullest potential to provide additional information and assistance in your response.
@@ -31,13 +35,14 @@ export async function generateText(prompt: string) {
         description: "generate a wallpaper based on description and params",
         parameters: z.object({
           description: z.string(),
-          params: z.array(z.object({ name: z.string(), value: z.string() })),
+          params: z.array(z.object({ factor: z.string(), scrapedValue: z.string().describe("the value received from retreive tool") })),
         }),
         execute: async ({ description, params }) => {
+          console.log(description, params)
           const result = await fal.subscribe("fal-ai/lora", {
             input: {
               model_name: "stabilityai/stable-diffusion-xl-base-1.0",
-              prompt: `generate a wallpaper based on following params: ${(params as Array<{ name: string, value: string }>).map((p) => `${p.name}- ${p.value}`).join(", ")}. ${description}`,
+              prompt: `generate a wallpaper based on following params: ${(params as Array<{ factor: string, scrapedValue: string }>).map((p) => `${p.factor}- ${p.scrapedValue}`).join(", ")}. ${description}`,
             },
             onQueueUpdate: (update) => {
               // if (update.status === "IN_PROGRESS") {
@@ -72,6 +77,7 @@ export async function generateText(prompt: string) {
           url: z.string(),
         }),
         execute: async ({ url }) => {
+          console.log(url)
           const response = await fetch(`https://r.jina.ai/${url}`, {
             method: 'GET',
             headers: {
