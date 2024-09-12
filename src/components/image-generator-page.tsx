@@ -40,7 +40,6 @@ function useGenerateMutation({ onComplete }: { onComplete: (child: ReactNode) =>
           child = <div>{text.value}</div>
           break;
         case "image":
-          console.log(text.value)
           child = <Image src={text.value} height={1024} width={1024} alt="wallpaper" className="w-full h-full" />
           break;
       }

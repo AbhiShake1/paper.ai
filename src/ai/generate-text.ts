@@ -19,6 +19,7 @@ const model = createAI({
 export async function generateText(prompt: string) {
   const result = await genText({
     model: model("gemini-1.5-flash"),
+    maxToolRoundtrips: 2,
     system: `As a professional search expert and artist, you possess the ability to search for any information on the web, and based on that generate unique art.
     or any information on the web.
     For each user query, utilize the search results and creativity to their fullest potential to provide additional information and assistance in your response.
@@ -26,7 +27,8 @@ export async function generateText(prompt: string) {
     The retrieve tool can only be used with URLs provided by the user. URLs from search results cannot be used.
     If it is a domain instead of a URL, specify it in the include_domains of the search tool.
     Please match the language of the response to the user's language. 
-    Current date and time: ${new Date().toLocaleString()}
+    Current date and time: ${new Date().toLocaleString()}.
+    Generate image of choice and give the url without asking for any further question.
     `,
     prompt,
     tools: {
@@ -38,7 +40,6 @@ export async function generateText(prompt: string) {
           params: z.array(z.object({ factor: z.string(), scrapedValue: z.string().describe("the value received from retreive tool") })),
         }),
         execute: async ({ description, params }) => {
-          console.log(description, params)
           const result = await fal.subscribe("fal-ai/lora", {
             input: {
               model_name: "stabilityai/stable-diffusion-xl-base-1.0",
@@ -66,43 +67,7 @@ export async function generateText(prompt: string) {
         parameters: z.object({
           query: z.string(),
         }),
-        execute: async ({ query }) => {
-          return "retrieve urls and find data for " + query
-        },
-      },
-      retreive: {
-        name: "retreive",
-        description: "retreive information from the web",
-        parameters: z.object({
-          url: z.string(),
-        }),
-        execute: async ({ url }) => {
-          console.log(url)
-          const response = await fetch(`https://r.jina.ai/${url}`, {
-            method: 'GET',
-            headers: {
-              Accept: 'application/json',
-              'X-With-Generated-Alt': 'true'
-            }
-          })
-          const json = await response.json()
-          if (!!json.data && json.data.length !== 0) {
-            // Limit the content to 5000 characters
-            if (json.data.content.length > 5000) {
-              json.data.content = json.data.content.slice(0, 5000)
-            }
-            return {
-              type: "search",
-              value: [
-                {
-                  title: json.data.title,
-                  content: json.data.content,
-                  url: json.data.url
-                }
-              ],
-            }
-          }
-        },
+        execute: ({ query }) => tavilySearch(query),
       },
     },
     // toolChoice: { type: "tool", toolName: "toolName" },
@@ -115,11 +80,47 @@ export async function generateText(prompt: string) {
           type: "image",
           value: toolResult.result?.value?.toString() ?? "",
         }
+      // case "search":
+      //   return generateText(`generate a wallpaper based on following prompt and following raw data
+      //   prompt: ${prompt}
+      //   raw data:
+      //   ${toolResult.result?.toString()}
+      //   `)
     }
   }
 
   return {
     type: "text",
     value: result.text,
+  }
+}
+
+async function tavilySearch(
+  query: string,
+  searchDepth: 'basic' | 'advanced' = 'basic',
+) {
+  const apiKey = env.TAVILY_API_KEY
+  const response = await fetch('https://api.tavily.com/search', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      api_key: apiKey,
+      query,
+      max_results: 1,
+      search_depth: searchDepth,
+      include_images: false,
+      include_image_descriptions: false,
+      include_answers: true,
+      include_domains: [],
+      exclude_domains: []
+    })
+  })
+
+  const data = await response.json()
+
+  return {
+    result: data.results[0]?.content,
   }
 }
