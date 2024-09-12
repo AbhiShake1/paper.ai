@@ -36,7 +36,7 @@ export function ImageGeneratorPage() {
 
   const generateUrlMutation = useMutation({
     mutationFn: () => {
-      return generateText(`generate a wallpaper based on following parameters: ${customElements.join(", ")}`)
+      return generateText(`generate a wallpaper based on following parameters : ${customElements.map(c => c.name).join(", ")}`)
     },
     onError: (error) => {
       console.log(error)
