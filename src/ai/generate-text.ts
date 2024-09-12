@@ -23,12 +23,8 @@ export async function generateText(prompt: string) {
     system: `As a professional search expert and artist, you possess the ability to search for any information on the web, and based on that generate unique art.
     or any information on the web.
     For each user query, utilize the search results and creativity to their fullest potential to provide additional information and assistance in your response.
-    Aim to directly address the user's question, augmenting your response with insights gleaned from the search results.
-    The retrieve tool can only be used with URLs provided by the user. URLs from search results cannot be used.
-    If it is a domain instead of a URL, specify it in the include_domains of the search tool.
-    Please match the language of the response to the user's language. 
     Current date and time: ${new Date().toLocaleString()}.
-    Generate image of choice and give the url without asking for any further question.
+    Generate image of choice and give the url without asking for any further question. the final result should be url to generated image
     `,
     prompt,
     tools: {
@@ -74,6 +70,8 @@ export async function generateText(prompt: string) {
     // toolChoice: { type: "tool", toolName: "toolName" },
   })
 
+  console.log(result)
+
   for (const toolResult of result.toolResults) {
     switch (toolResult.toolName) {
       case "wallpaper":
@@ -90,9 +88,11 @@ export async function generateText(prompt: string) {
     }
   }
 
+  const linkInText = result.text.match(/(https?:\/\/[^\s]+)/g)
+
   return {
-    type: "text",
-    value: result.text,
+    type: linkInText ? "image" : "text",
+    value: linkInText ? linkInText[0] : result.text,
   }
 }
 
