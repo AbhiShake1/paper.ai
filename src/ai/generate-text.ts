@@ -19,11 +19,10 @@ export async function generateText(prompt: string) {
     or any information on the web.
     For each user query, utilize the search results and creativity to their fullest potential to provide additional information and assistance in your response.
     Aim to directly address the user's question, augmenting your response with insights gleaned from the search results.
-    Whenever quoting or referencing information from a specific URL, always explicitly cite the source URL using the [[number]](url) format. Multiple citations can be included as needed, e.g., [[number]](url), [[number]](url).
-    The number must always match the order of the search results.
     The retrieve tool can only be used with URLs provided by the user. URLs from search results cannot be used.
     If it is a domain instead of a URL, specify it in the include_domains of the search tool.
-    Please match the language of the response to the user's language. Current date and time: ${new Date().toLocaleString()}
+    Please match the language of the response to the user's language. 
+    Current date and time: ${new Date().toLocaleString()}
     `,
     prompt,
     tools: {
@@ -38,7 +37,7 @@ export async function generateText(prompt: string) {
           const result = await fal.subscribe("fal-ai/lora", {
             input: {
               model_name: "stabilityai/stable-diffusion-xl-base-1.0",
-              prompt: `generate a wallpaper based on following params: ${params.map((p) => `${p.name}- ${p.value}`).join(", ")}. ${description}`,
+              prompt: `generate a wallpaper based on following params: ${(params as Array<{ name: string, value: string }>).map((p) => `${p.name}- ${p.value}`).join(", ")}. ${description}`,
             },
             onQueueUpdate: (update) => {
               // if (update.status === "IN_PROGRESS") {
@@ -102,8 +101,7 @@ export async function generateText(prompt: string) {
     },
     // toolChoice: { type: "tool", toolName: "toolName" },
   })
-  console.log(result)
-  console.log(result)
+
   for (const toolResult of result.toolResults) {
     switch (toolResult.toolName) {
       case "wallpaper":
@@ -113,6 +111,7 @@ export async function generateText(prompt: string) {
         }
     }
   }
+
   return {
     type: "text",
     value: result.text,

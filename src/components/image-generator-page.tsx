@@ -19,7 +19,7 @@ To read more about using these font, please visit the Next.js documentation:
 **/
 "use client"
 
-import { useState } from "react"
+import { ReactNode, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
@@ -27,20 +27,10 @@ import { useMutation } from "@tanstack/react-query"
 import { generateText } from "@/ai/generate-text"
 import Image from "next/image"
 
-export function ImageGeneratorPage() {
-  const [customElements, setCustomElements] = useState([
-    { name: "weather" },
-  ])
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [component, setComponent] = useState<React.ReactNode>(null)
-
-  const generateUrlMutation = useMutation({
-    mutationFn: () => {
-      return generateText(`generate a wallpaper based on following parameters : ${customElements.map(c => c.name).join(", ")}`)
-    },
-    onError: (error) => {
-      console.log(error)
-    },
+function useGenerateMutation({ onComplete, prompt }: { prompt: string, onComplete: (child: ReactNode) => void }) {
+  return useMutation({
+    mutationFn: () => generateText(prompt),
+    onError: console.error,
     onSuccess: (text) => {
       let child = <div>{JSON.stringify(text)}</div>
       switch (text.type) {
@@ -53,8 +43,21 @@ export function ImageGeneratorPage() {
           break;
       }
 
-      setComponent(child)
+      onComplete(child)
     },
+  })
+}
+
+export function ImageGeneratorPage() {
+  const [customElements, setCustomElements] = useState([
+    { name: "weather" },
+  ])
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [component, setComponent] = useState<React.ReactNode>(null)
+
+  const generateUrlMutation = useGenerateMutation({
+    prompt: `generate a wallpaper based on following parameters : ${customElements.map(c => c.name).join(", ")}`,
+    onComplete: (child) => setComponent(child),
   })
 
   const handleCustomElementsChange = (index: number, newName: string) => {
